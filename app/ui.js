@@ -197,7 +197,7 @@ var UI;
             UI.initSetting('host', window.location.hostname);
             UI.initSetting('port', port);
             UI.initSetting('encrypt', (window.location.protocol === "https:"));
-            UI.initSetting('true_color', true);
+            UI.initSetting('convertColor', false);
             UI.initSetting('cursor', !Util.isTouchDevice);
             UI.initSetting('resize', 'off');
             UI.initSetting('shared', true);
@@ -451,7 +451,7 @@ var UI;
         updateVisualState: function() {
             //Util.Debug(">> updateVisualState");
             document.getElementById('noVNC_setting_encrypt').disabled = UI.connected;
-            document.getElementById('noVNC_setting_true_color').disabled = UI.connected;
+            document.getElementById('noVNC_setting_convertColor').disabled = UI.connected;
             if (Util.browserSupportsCursorURIs()) {
                 document.getElementById('noVNC_setting_cursor').disabled = UI.connected;
             } else {
@@ -825,7 +825,7 @@ var UI;
         settingsApply: function() {
             //Util.Debug(">> settingsApply");
             UI.saveSetting('encrypt');
-            UI.saveSetting('true_color');
+            UI.saveSetting('convertColor');
             if (Util.browserSupportsCursorURIs()) {
                 UI.saveSetting('cursor');
             }
@@ -876,7 +876,7 @@ var UI;
             UI.openControlbar();
 
             UI.updateSetting('encrypt');
-            UI.updateSetting('true_color');
+            UI.updateSetting('convertColor');
             if (Util.browserSupportsCursorURIs()) {
                 UI.updateSetting('cursor');
             } else {
@@ -916,7 +916,7 @@ var UI;
                 UI.openSettingsPanel();
             }
         },
-
+        
 /* ------^-------
  *   /SETTINGS
  * ==============
@@ -1060,7 +1060,7 @@ var UI;
             UI.closeConnectPanel();
 
             UI.rfb.set_encrypt(UI.getSetting('encrypt'));
-            UI.rfb.set_true_color(UI.getSetting('true_color'));
+            UI.rfb.set_convertColor(UI.getSetting('convertColor'));
             UI.rfb.set_local_cursor(UI.getSetting('cursor'));
             UI.rfb.set_shared(UI.getSetting('shared'));
             UI.rfb.set_view_only(UI.getSetting('view_only'));

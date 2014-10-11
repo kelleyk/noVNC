@@ -456,7 +456,10 @@
             // else: No-op -- already done by setSubTile
         },
 
-        blitImage: function (x, y, width, height, arr, offset, from_queue) {
+        // NB(kelleyk): You *cannot* call this during a test in RGBX-order true-color mode, or PhantomJS dies with a Uint8ClampeddArray error.
+        // @KK: If you know that your data will always be RGB (that is, isRgb==true and this._true_color==true), then
+        //      you should be calling blitRgbxImage() instead of blitImage() to avoid the extra branches.
+        blitImage: function (x, y, width, height, arr, offset, isRgb, from_queue) {
             if (this._renderQ.length !== 0 && !from_queue) {
                 // NB(directxman12): it's technically more performant here to use preallocated arrays,
                 // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
@@ -470,9 +473,14 @@
                     'y': y,
                     'width': width,
                     'height': height,
+                    'isRgb': isRgb  // @KK: ???
                 });
             } else if (this._true_color) {
-                this._bgrxImageData(x, y, width, height, arr, offset);
+                if (isRgb) {
+                    this._rgbxImageData(x, y, width, height, arr, offset);
+                } else {
+                    this._bgrxImageData(x, y, width, height, arr, offset);
+                }
             } else {
                 this._cmapImageData(x, y, width, height, arr, offset);
             }
@@ -491,7 +499,8 @@
                     'x': x,
                     'y': y,
                     'width': width,
-                    'height': height,
+                    'height': height
+                    // 'isRgb': isRgb, // @KK: ??  Look at the version history around this line.  Should this always be true?  Does it just not make sense here? etc.
                 });
             } else if (this._true_color) {
                 this._rgbImageData(x, y, width, height, arr, offset);
@@ -501,6 +510,8 @@
             }
         },
 
+        // this is different from the above in that it assumes the data is always rgbx format, instead
+        // of dealing with the possibility of cmap data
         blitRgbxImage: function (x, y, width, height, arr, offset, from_queue) {
             if (this._renderQ.length !== 0 && !from_queue) {
                 // NB(directxman12): it's technically more performant here to use preallocated arrays,
@@ -514,7 +525,7 @@
                     'x': x,
                     'y': y,
                     'width': width,
-                    'height': height,
+                    'height': height
                 });
             } else {
                 this._rgbxImageData(x, y, width, height, arr, offset);
@@ -716,10 +727,7 @@
                         this.fillRect(a.x, a.y, a.width, a.height, a.color, true);
                         break;
                     case 'blit':
-                        this.blitImage(a.x, a.y, a.width, a.height, a.data, 0, true);
-                        break;
-                    case 'blitRgb':
-                        this.blitRgbImage(a.x, a.y, a.width, a.height, a.data, 0, true);
+                        this.blitImage(a.x, a.y, a.width, a.height, a.data, 0, a.rgb, true);
                         break;
                     case 'blitRgbx':
                         this.blitRgbxImage(a.x, a.y, a.width, a.height, a.data, 0, true);

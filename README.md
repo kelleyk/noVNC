@@ -139,7 +139,7 @@ WebSockets to TCP socket proxy. There is a python proxy included
     * UI and Icons : Pierre Ossman, Chris Gordon
     * Original Logo : Michael Sersen
     * tight encoding : Michael Tinglof (Mercuri.ca)
-    * pixel format conversion : [Alexander Clouter](http://www.digriz.org.uk/)
+    * pixel format conversion and ATEN iKVM support : [Alexander Clouter](http://www.digriz.org.uk/)
 
 * Included libraries:
     * as3crypto : Henri Torgemane (code.google.com/p/as3crypto)

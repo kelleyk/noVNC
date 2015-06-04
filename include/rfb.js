@@ -844,7 +844,7 @@ var RFB;
             if (!this._rfb_tightvnc) {  // first pass, do the tunnel negotiation
                 if (this._sock.rQwait("num tunnels", 4)) { return false; }
                 numTunnels = this._sock.rQshift32();
-                if (this._rfb_version === 3.8 && (numTunnels & 0xf7ff0ff0) >>> 0 === 0xaff90fb0) { return this._negotiate_aten_auth(); }
+                if (this._rfb_version === 3.8 && (numTunnels & 0xf7ff0ff0) >>> 0 === 0xa7f90fb0) { return this._negotiate_aten_auth(); }
                 if (numTunnels > 0 && this._sock.rQwait("tunnel capabilities", 16 * numTunnels, 4)) { return false; }
 
                 this._rfb_tightvnc = true;

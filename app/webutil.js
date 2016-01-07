@@ -11,24 +11,8 @@
 /*global Util, window, document */
 
 // Globals defined here
-var WebUtil = {}, $D;
-
-/*
- * Simple DOM selector by ID
- */
-if (!window.$D) {
-    window.$D = function (id) {
-        if (document.getElementById) {
-            return document.getElementById(id);
-        } else if (document.all) {
-            return document.all[id];
-        } else if (document.layers) {
-            return document.layers[id];
-        }
-        return undefined;
-    };
-}
-
+/* [module] name: WebUtil; requires: Util */
+var WebUtil = {};
 
 /*
  * ------------------------------------------------------

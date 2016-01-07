@@ -77,7 +77,9 @@
 
 /* jslint white: false */
 
-function DES(passwd) {
+/* [module] name: DES */
+
+var DES = function (passwd) {
     "use strict";
 
     // Tables, permutations, S-boxes, etc.
@@ -273,4 +275,4 @@ function DES(passwd) {
     setKeys(passwd);             // Setup keys
     return {'encrypt': encrypt}; // Public interface
 
-} // function DES
+}; // function DES

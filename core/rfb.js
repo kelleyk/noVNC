@@ -10,8 +10,10 @@
  * (c) 2012 Michael Tinglof, Joe Balaz, Les Piech (Mercuri.ca)
  */
 
+/* [module] Name: RFB ; Requires: Util, Display, Keyboard, Mouse, Websock, Base64, DES, KeyTable, Inflator */
+
 /*jslint white: false, browser: true */
-/*global window, Util, Display, Keyboard, Mouse, Websock, Base64, DES */
+/*global window, Util, Display, Keyboard, Mouse, Websock, Base64, DES, KeyTable */
 
 var RFB;
 
@@ -254,12 +256,12 @@ var RFB;
             if (this._rfb_state !== 'normal' || this._view_only) { return false; }
             Util.Info("Sending Ctrl-Alt-Del");
 
-            RFB.messages.keyEvent(this._sock, XK_Control_L, 1);
-            RFB.messages.keyEvent(this._sock, XK_Alt_L, 1);
-            RFB.messages.keyEvent(this._sock, XK_Delete, 1);
-            RFB.messages.keyEvent(this._sock, XK_Delete, 0);
-            RFB.messages.keyEvent(this._sock, XK_Alt_L, 0);
-            RFB.messages.keyEvent(this._sock, XK_Control_L, 0);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Control_L, 1);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Alt_L, 1);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Delete, 1);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Delete, 0);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Alt_L, 0);
+            RFB.messages.keyEvent(this._sock, KeyTable.XK_Control_L, 0);
 
             this._sock.flush();
         },
@@ -369,7 +371,7 @@ var RFB;
             }
 
             for (i = 0; i < 4; i++) {
-                this._FBU.zlibs[i] = new inflator.Inflate();
+                this._FBU.zlibs[i] = new Inflator.Inflate();
             }
         },
 

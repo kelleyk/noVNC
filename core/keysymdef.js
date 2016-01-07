@@ -1,3 +1,5 @@
+/* [module] Name: keysyms */
+
 // This file describes mappings from Unicode codepoints to the keysym values
 // (and optionally, key names) expected by the RFB protocol
 // How this file was generated:

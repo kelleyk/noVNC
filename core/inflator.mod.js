@@ -1,5 +1,6 @@
-var zlib = require('../node_modules/pako/lib/zlib/inflate.js');
-var ZStream = require('../node_modules/pako/lib/zlib/zstream.js');
+/* [module] name: Inflator ; CommonJS: true */ 
+var zlib = require('../../node_modules/pako/lib/zlib/inflate.js');
+var ZStream = require('../../node_modules/pako/lib/zlib/zstream.js');
 
 var Inflate = function () {
     this.strm = new ZStream();

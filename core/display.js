@@ -10,6 +10,7 @@
 /*jslint browser: true, white: false */
 /*global Util, Base64, changeCursor */
 
+/* [module] name: Display; requires: Util, Base64 */
 var Display;
 
 (function () {

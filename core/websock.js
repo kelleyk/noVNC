@@ -14,10 +14,12 @@
  * read binary data off of the receive queue.
  */
 
+/* [module] Name: Websock ; Requires: Util, Base64 */
+
 /*jslint browser: true, bitwise: true */
 /*global Util*/
 
-function Websock() {
+var Websock = function () {
     "use strict";
 
     this._websocket = null;  // WebSocket object
@@ -43,7 +45,7 @@ function Websock() {
         'close': function () {},
         'error': function () {}
     };
-}
+};
 
 (function () {
     "use strict";

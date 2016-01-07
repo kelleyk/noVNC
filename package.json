@@ -29,7 +29,7 @@
     "ansi": "^0.3.0",
     "casperjs": "^1.1.0-beta3",
     "chai": "^2.1.0",
-    "commander": "^2.6.0",
+    "commander": "^2.8.1",
     "karma": "^0.12.31",
     "karma-chai": "^0.1.0",
     "karma-mocha": "^0.1.10",

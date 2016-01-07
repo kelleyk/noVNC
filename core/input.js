@@ -8,7 +8,8 @@
 /*jslint browser: true, white: false */
 /*global window, Util */
 
-var Keyboard, Mouse;
+/* [module] name: Keyboard; requires: Util, KeyboardUtil */
+var Keyboard;
 
 (function () {
     "use strict";
@@ -27,10 +28,10 @@ var Keyboard, Mouse;
         });
 
         // create the keyboard handler
-        this._handler = new KeyEventDecoder(kbdUtil.ModifierSync(),
-            VerifyCharModifier( /* jshint newcap: false */
-                TrackKeyState(
-                    EscapeModifiers(this._handleRfbEvent.bind(this))
+        this._handler = new KeyboardUtil.KeyEventDecoder(KeyboardUtil.ModifierSync(),
+            KeyboardUtil.VerifyCharModifier( /* jshint newcap: false */
+                KeyboardUtil.TrackKeyState(
+                    KeyboardUtil.EscapeModifiers(this._handleRfbEvent.bind(this))
                 )
             )
         ); /* jshint newcap: true */
@@ -145,11 +146,12 @@ var Keyboard, Mouse;
 
         ['onKeyPress', 'rw', 'func'] // Handler for key press/release
     ]);
+})();
 
-    //
-    // Mouse event handler
-    //
+/* [module] name: Mouse; requires: Util */
+var Mouse;
 
+(function () {
     Mouse = function (defaults) {
         this._mouseCaptured  = false;
 

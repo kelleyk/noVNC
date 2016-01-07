@@ -312,21 +312,41 @@ var RFB;
 
             if (this._supportsSetDesktopSize) {
 
-                var arr = [251];    // msg-type
-                arr.push8(0);       // padding
-                arr.push16(width);  // width
-                arr.push16(height); // height
+                var arr = new Array(24);
+                arr[0] = [251];     // msg-type
+                arr[1] = 0;         // padding
 
-                arr.push8(1);       // number-of-screens
-                arr.push8(0);       // padding
+                arr[2] = (width >> 8) & 0xff; // width
+                arr[3] = width & 0xff;
+
+                arr[4] = (height >> 8) & 0xff; // height
+                arr[5] = height & 0xff;
+
+                arr[6] = 1;       // number-of-screens
+                arr[7] = 0;       // padding
 
                 // screen array
-                arr.push32(this._screen_id);    // id
-                arr.push16(0);                  // x-position
-                arr.push16(0);                  // y-position
-                arr.push16(width);              // width
-                arr.push16(height);             // height
-                arr.push32(this._screen_flags); // flags
+                arr[8] = (this._screen_id >> 24) & 0xff; // id
+                arr[9] = (this._screen_id >> 16) & 0xff;
+                arr[10] = (this._screen_id >> 8) & 0xff;
+                arr[11] = this._screen_id & 0xff;
+
+                arr[12] = 0;  // x-position
+                arr[13] = 0;
+
+                arr[14] = 0;  // y-position
+                arr[15] = 0;
+
+                arr[16] = (width >> 8) & 0xff; // width
+                arr[17] = width & 0xff;
+
+                arr[18] = (height >> 8) & 0xff; // height
+                arr[19] = height & 0xff;
+
+                arr[20] = (this._screen_flags >> 24) & 0xff; // flags
+                arr[21] = (this._screen_flags >> 16) & 0xff;
+                arr[22] = (this._screen_flags >> 8) & 0xff;
+                arr[23] = this._screen_flags & 0xff;
 
                 this._sock.send(arr);
             }

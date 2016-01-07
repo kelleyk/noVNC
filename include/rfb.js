@@ -11,7 +11,7 @@
  */
 
 /*jslint white: false, browser: true */
-/*global window, Util, Display, Keyboard, Mouse, Websock, Websock_native, Base64, DES */
+/*global window, Util, Display, Keyboard, Mouse, Websock, Base64, DES */
 
 var RFB;
 
@@ -216,13 +216,8 @@ var RFB;
         this._init_vars();
 
         var rmode = this._display.get_render_mode();
-        if (Websock_native) {
-            Util.Info("Using native WebSockets");
-            this._updateState('loaded', 'noVNC ready: native WebSockets, ' + rmode);
-        } else {
-            this._cleanupSocket('fatal');
-            throw new Error("WebSocket support is required to use noVNC");
-        }
+        Util.Info("Using native WebSockets");
+        this._updateState('loaded', 'noVNC ready: native WebSockets, ' + rmode);
 
         Util.Debug("<< RFB.constructor");
     };

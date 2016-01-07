@@ -604,19 +604,3 @@ Util.Features = {xpath: !!(document.evaluate), air: !!(window.runtime), query: !
         Util.Engine.webkit = detectActualWebkit(Util.Engine.webkit);
     }
 })();
-
-Util.Flash = (function () {
-    "use strict";
-    var v, version;
-    try {
-        v = navigator.plugins['Shockwave Flash'].description;
-    } catch (err1) {
-        try {
-            v = new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version');
-        } catch (err2) {
-            v = '0 r0';
-        }
-    }
-    version = v.match(/\d+/g);
-    return {version: parseInt(version[0] || 0 + '.' + version[1], 10) || 0, build: parseInt(version[2], 10) || 0};
-}());

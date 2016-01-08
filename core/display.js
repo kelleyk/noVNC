@@ -765,7 +765,7 @@ var Display;
             }
 
             if (this._renderQ.length > 0) {
-                requestAnimFrame(this._scan_renderQ.bind(this));
+                Display.requestAnimFrame(this._scan_renderQ.bind(this));
             }
         },
     };
@@ -896,4 +896,19 @@ var Display;
         var url = 'data:image/x-icon;base64,' + Base64.encode(cur);
         target.style.cursor = 'url(' + url + ')' + hotx + ' ' + hoty + ', default';
     };
+
+    //
+    // requestAnimationFrame shim with setTimeout fallback
+    //
+
+    Display.requestAnimFrame = (function () {
+        return  window.requestAnimationFrame       ||
+                window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame    ||
+                window.oRequestAnimationFrame      ||
+                window.msRequestAnimationFrame     ||
+                function (callback) {
+                    window.setTimeout(callback, 1000 / 60);
+                };
+    })();
 })();

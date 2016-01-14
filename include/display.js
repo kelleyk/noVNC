@@ -469,13 +469,15 @@ var Display;
             // else: No-op -- already done by setSubTile
         },
 
+        // @KK: If you know that your data will always be RGB (that is, isRgb==true and this._true_color==true), then
+        //      you should be calling blitRgbxImage() instead of blitImage() to avoid the extra branches.
         blitImage: function (x, y, width, height, arr, offset, isRgb, from_queue) {
             if (this._renderQ.length !== 0 && !from_queue) {
                 // NB(directxman12): it's technically more performant here to use preallocated arrays,
                 // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
                 // this probably isn't getting called *nearly* as much
                 var new_arr = new Uint8Array(width * height * 4);
-                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));
+                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));  // @KK: Why are we allocating *two* new arrays here?
                 this.renderQ_push({
                     'type': 'blit',
                     'data': new_arr,

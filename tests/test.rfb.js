@@ -335,7 +335,8 @@ describe('Remote Frame Buffer Protocol Client', function() {
             it('should clear the disconnect timer if the state is not "disconnecting"', function () {
                 var spy = sinon.spy();
                 client._disconnTimer = setTimeout(spy, 50);
-                client._updateConnectionState('connecting');
+                client._rfb_connection_state = 'connecting';
+                client._updateConnectionState('connected');
                 this.clock.tick(51);
                 expect(spy).to.not.have.been.called;
                 expect(client._disconnTimer).to.be.null;
@@ -764,8 +765,17 @@ describe('Remote Frame Buffer Protocol Client', function() {
                 client._rfb_init_state = 'Security';
             });
 
-            function send_security(type, cl) {
-                cl._sock._websocket._receive_data(new Uint8Array([1, type]));
+            // @KK: 'types' may be either a single number or an array of numbers.
+            function send_security(types, cl) {
+                if (types.constructor !== Array)
+                    types = [types];
+                
+                var data = new Uint8Array(1 + types.length);
+                data[0] = types.length;
+                for (var i = 0; i < types.length; ++i)
+                    data[i+1] = types[i];
+                
+                cl._sock._websocket._receive_data(data);
             }
 
             it('should fail on auth scheme 0 (pre 3.7) with the given message', function () {
@@ -911,7 +921,11 @@ describe('Remote Frame Buffer Protocol Client', function() {
                     client._sock._websocket._open();
                     client._rfb_init_state = 'Security';
                     client._rfb_version = 3.8;
-                    send_security(16, client);
+                    // @KK: Actual TightVNC servers support more than just 16 ("tight"), whereas ATEN iKVM servers
+                    // advertise only 16.  This is a large part of how we detect that we are speaking to an iKVM server,
+                    // so if we want to test the client's interaction with a TightVNC server, we need to send more than
+                    // just the one.
+                    send_security([1, 16], client);
                     client._sock._websocket._get_sent_data();  // skip the security reply
                 });
 
@@ -1000,6 +1014,7 @@ describe('Remote Frame Buffer Protocol Client', function() {
                     client._sock._websocket._open();
                     client._rfb_init_state = 'Security';
                     client._rfb_version = 3.8;
+                    // @KK: ATEN iKVM server advertise *only* 16 ("tight"), which is how we detect them.
                     send_security(16, client);
                     client._sock._websocket._get_sent_data();  // skip the security reply
                     client._rfb_password = 'test1:test2';

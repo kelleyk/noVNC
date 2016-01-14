@@ -21,7 +21,7 @@
 
     this._renderQ = [];  // queue drawing actions for in-oder rendering
     this._flushing = false;
-
+    
     // the full frame buffer (logical canvas) size
     this._fb_width = 0;
     this._fb_height = 0;
@@ -100,6 +100,9 @@
 
 (function () {
     "use strict";
+
+    // Should be false only for PhantomJS 1.x.
+    var SUPPORTS_UINT8CLAMPEDARRAY = (window.Uint8ClampedArray !== undefined);
 
     var SUPPORTS_IMAGEDATA_CONSTRUCTOR = false;
     try {
@@ -465,7 +468,7 @@
                 // but it's a lot of extra work for not a lot of payoff -- if we're using the render queue,
                 // this probably isn't getting called *nearly* as much
                 var new_arr = new Uint8Array(width * height * 4);
-                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));
+                new_arr.set(new Uint8Array(arr.buffer, 0, new_arr.length));  // @KK: Why are we allocating *two* new arrays here?
                 this._renderQ_push({
                     'type': 'blit',
                     'data': new_arr,
@@ -671,12 +674,26 @@
         _rgbxImageData: function (x, y, width, height, arr, offset) {
             // NB(directxman12): arr must be an Type Array view
             var img;
-            if (SUPPORTS_IMAGEDATA_CONSTRUCTOR) {
-                img = new ImageData(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4), width, height);
-            } else {
-                img = this._drawCtx.createImageData(width, height);
-                img.data.set(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4));
-            }
+             if (SUPPORTS_UINT8CLAMPEDARRAY) {
+                 if (SUPPORTS_IMAGEDATA_CONSTRUCTOR) {
+                     img = new ImageData(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4), width, height);
+                 } else {
+                     img = this._drawCtx.createImageData(width, height);
+                     img.data.set(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4));
+                 }
+             } else {
+                 // NB(kelleyk): Normally, this function uses Uint8ClampedArray (which isn't implemented by PhantomJS
+                 // 1.x); this path is here only for test-case support.  A longer-term solution would be to upgrade to
+                 // PhantomJS 2.x.
+                 img = this._drawCtx.createImageData(width, height);
+                 var data = img.data;
+                 for (var i = 0, j = offset; i < (width * height * 4); i += 4, j += 4) {
+                     data[i] = arr[j];
+                     data[i+1] = arr[j+1];
+                     data[i+2] = arr[j+2];
+                     data[i+3] = arr[j+3];
+                 }
+             }
             this._drawCtx.putImageData(img, x, y);
             this._damage(x, y, img.width, img.height);
         },

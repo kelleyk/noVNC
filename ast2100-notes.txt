@@ -4,7 +4,7 @@
 These are notes to accompany the ATEN iKVM "AST2100" (0x59) encoding implementation that this branch contains.
 
 This implementation is the product of clean-room reverse engineering (that is, I am not and have never been subject to
-nondisclosure agreements or proprietary information related to this subject matter of this project).
+nondisclosure agreements or proprietary information related to the subject matter of this project).
 
 (c) Copyright 2015-2016 Kevin Kelley <kelleyk@kelleyk.net>
 

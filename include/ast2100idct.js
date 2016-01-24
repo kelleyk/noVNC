@@ -53,9 +53,11 @@ var fixed_mul = function (a, b) {
 
     AST2100IDCT = {
 
-        // Uses the 16/16 integer representation that ATEN and libjpeg's jidctfst.c ("fast, not-so-accurate integer IDCT") do.
-        // Note that this routine expects that the scaled quant table has already been applied to the input buffer, whereas (for
-        // performance) most implementations dequantize values in the IDT routine as they use them.
+        // Uses the 16/16 integer representation that ATEN and libjpeg's jidctfst.c ("fast, not-so-accurate integer
+        // IDCT") do.  Note that, for performance, this routine *also* incorporates the dequantization step, which is
+        // why it takes scaled_quant_table as an argument.  (This argument does not actually contain "just" a scaled
+        // quant table; some constants have been pre-multiplied into it.  See the function that loads quant tables for
+        // more details.)
         idct_fixed_aan: function (scaled_quant_table, buf, dstBuf) {
 
             // ATEN rounds things off early, at a cost to precision: the int32 values in 'workspace' are not scaled at all.

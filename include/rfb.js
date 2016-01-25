@@ -34,6 +34,7 @@ var RFB;
 
         this._rfb_tightvnc = false;
         this._rfb_atenikvm = false;
+        this._rfb_openvnc = false;
         this._rfb_xvp_ver = 0;
 
         // In preference order
@@ -64,6 +65,16 @@ var RFB;
             ['last_rect',           -224 ],
             ['xvp',                 -309 ],
             ['ExtendedDesktopSize', -308 ]
+        ];
+
+        //dell uses openVNC, which doesn't send us FBU if we ask for COPYRECT, TIGHT, or TIGHT_PNG first
+        // during SetEncodings message to server.
+        this._openvnc_encodings = [
+            'HEXTILE', 
+            'RRE', 
+            'RAW', 
+            //use all enabled pseudo encodings
+            'DesktopSize', 'Cursor', 'JPEG_quality_med', 'compress_hi','last_rect','xvp','ExtendedDesktopSize'
         ];
 
         this._encHandlers = {};
@@ -1033,6 +1044,10 @@ var RFB;
                 Util.Warn("Intel AMT KVM only supports 8/16 bit depths, using server pixel format");
                 this._convertColor = true;
             }
+            else if(this._fb_name === "OpenVNC") {
+                Util.Warn("OpenVNC will not respond to TIGHT or COPYRECT encodings; will not be sent to server.");
+                this._rfb_openvnc = true;
+            }
 
             // ATEN 'wisdom' from chicken-aten-ikvm:lens/lens.rb
             // tested against the following Supermicro motherboards
@@ -1146,7 +1161,10 @@ var RFB;
                 return this._fail('server claims greater depth than sum of RGB maximums');
             }
 
-            RFB.messages.clientEncodings(this._sock, this._encodings, this._local_cursor, this._pixelFormat._true_color);
+            RFB.messages.clientEncodings(this._sock, this._encodings, this._local_cursor, this._pixelFormat._true_color,
+                //If using openVNC, use the encodings that the server likes as a filter; else all allowed (empty filter)
+                this._rfb_openvnc ? this._openvnc_encodings : []
+            );
             RFB.messages.fbUpdateRequests(this._sock, this._display.getCleanDirtyReset(), this._fb_width, this._fb_height);
 
             this._timing.fbu_rt_start = (new Date()).getTime();
@@ -1743,7 +1761,7 @@ var RFB;
             sock._sQlen += 20;
         },
 
-        clientEncodings: function (sock, encodings, local_cursor, true_color) {
+        clientEncodings: function (sock, encodings, local_cursor, true_color, filter_encodings) {
             var buff = sock._sQ;
             var offset = sock._sQlen;
 
@@ -1756,6 +1774,9 @@ var RFB;
             for (i = 0; i < encodings.length; i++) {
                 if (encodings[i][0] === "Cursor" && !local_cursor) {
                     Util.Debug("Skipping Cursor pseudo-encoding");
+                } else if(filter_encodings.length > 0 && filter_encodings.indexOf(encodings[i][0]) == -1){
+                    //use filter if any are present; else use all - used for OpenVNC
+                    Util.Debug("Skipping " + encodings[i][0] + ", is not in filtered list.");
                 } else if (encodings[i][0] === "TIGHT" && !true_color) {
                     // TODO: remove this when we have tight+non-true-color
                     Util.Warn("Skipping tight as it is only supported with true color");

@@ -1132,7 +1132,7 @@ describe('Remote Frame Buffer Protocol Client', function() {
                 var expected = {_sQ: new Uint8Array(34 + 4 * (client._encodings.length - 1)), _sQlen: 0};
                 var pf = { bpp: 32, depth: 24, big_endian: false, true_color: true, red_max: 255, green_max: 255, blue_max: 255, red_shift: 16, green_shift: 8, blue_shift: 0 };
                 RFB.messages.pixelFormat(expected, pf);
-                RFB.messages.clientEncodings(expected, client._encodings, false, true);
+                RFB.messages.clientEncodings(expected, client._encodings, false, true, []);
                 var expected_cdr = { cleanBox: { x: 0, y: 0, w: 0, h: 0 },
                                      dirtyBoxes: [ { x: 0, y: 0, w: 27, h: 32 } ] };
                 RFB.messages.fbUpdateRequests(expected, expected_cdr, 27, 32);

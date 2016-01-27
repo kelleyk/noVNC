@@ -885,7 +885,7 @@ var RFB;
 
             // Newer X10 Supermicro motherboards get here.  @KK: If we had trouble with this heuristic matching non-ATEN
             // servers, we could also add the "only security type 0x10 is supported" condition from above.
-            if (this._rfb_version === 3.8 && numTunnels === 0 && subAuthCount === 0) {
+            if (this._rfb_version === 3.8 && numTunnels === 0 && (subAuthCount === 0 || (subAuthCount & 0xFFFF) == 0x0100)) {
                 Util.Info('Detected ATEN iKVM server (using heuristic #1 -- newer AST2400 BMC?).');
                 return this._negotiate_aten_auth();
             }

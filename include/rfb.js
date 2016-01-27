@@ -11,7 +11,7 @@
  */
 
 /*jslint white: false, browser: true */
-/*global window, Util, Display, Keyboard, Mouse, Websock, Websock_native, Base64, DES, Ast2100Decoder */
+/*global window, Util, Display, Keyboard, Mouse, Websock, Websock_native, Base64, DES, Ast2100Decoder, arrayEq */
 
 var RFB;
 
@@ -732,6 +732,7 @@ var RFB;
                 this._rfb_auth_scheme = 0;
                 var types = this._sock.rQshiftBytes(num_types);
                 Util.Debug("Server security types: " + types);
+                this._rfb_server_supported_security_types = Array.from(types);
                 for (var i = 0; i < types.length; i++) {
                     if (types[i] > this._rfb_auth_scheme && (types[i] <= 16 || types[i] == 22)) {
                         this._rfb_auth_scheme = types[i];
@@ -767,6 +768,7 @@ var RFB;
             this._rfb_atenikvm = true;
 
             if (this._rfb_tightvnc) {
+                // @KK: N.B.: We've already "skipped" the four bytes that we read into numTunnels.
                 this._rfb_tightvnc = false;
             } else {
                 this._sock.rQskipBytes(4);
@@ -824,6 +826,7 @@ var RFB;
         },
 
         _negotiate_tight_tunnels: function (numTunnels) {
+            // @KK: For a full of known tunnel types, see: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#tight-security-type
             var clientSupportedTunnelTypes = {
                 0: { vendor: 'TGHT', signature: 'NOTUNNEL' }
             };
@@ -855,7 +858,16 @@ var RFB;
             if (!this._rfb_tightvnc) {  // first pass, do the tunnel negotiation
                 if (this._sock.rQwait("num tunnels", 4)) { return false; }
                 numTunnels = this._sock.rQshift32();
-                if (this._rfb_version === 3.8 && (numTunnels & 0xf7ff0ff0) >>> 0 === 0xa7f90fb0) { return this._negotiate_aten_auth(); }
+                // @KK: I can only find about a half-dozen known tunnel types, so TightVNC should be sending a
+                // relatively small number here, whereas the ATEN servers send four bytes that, when interpreted as a
+                // u32, represent a very large number.  (The condition I've chosen below just checks that the first byte
+                // is nonzero.)  Further, TightVNC servers seem to be support both 0x02 and 0x10 security types, whereas
+                // ATEN iKVM servers advertise only support for 0x10.  (Are there *other* VNC servers that only support
+                // 0x10?)
+                if (this._rfb_version === 3.8 && arrayEq(this._rfb_server_supported_security_types, [0x10]) && (numTunnels < 0 || numTunnels > 0x1000000)) {
+                    Util.Info('Detected ATEN iKVM server (using heuristic #0 -- older Winbond/Nuvoton or Renesas BMC?).');
+                    return this._negotiate_aten_auth();
+                }
                 if (numTunnels > 0 && this._sock.rQwait("tunnel capabilities", 16 * numTunnels, 4)) { return false; }
 
                 this._rfb_tightvnc = true;
@@ -871,9 +883,10 @@ var RFB;
             var subAuthCount = this._sock.rQshift32();
             if (this._sock.rQwait("sub auth capabilities", 16 * subAuthCount, 4)) { return false; }
 
-            // Newer X10 Supermicro motherboards get here
+            // Newer X10 Supermicro motherboards get here.  @KK: If we had trouble with this heuristic matching non-ATEN
+            // servers, we could also add the "only security type 0x10 is supported" condition from above.
             if (this._rfb_version === 3.8 && numTunnels === 0 && subAuthCount === 0) {
-                // Util.Warn("Newer ATEN iKVM detected, you may get an 'unsupported encoding 87'");
+                Util.Info('Detected ATEN iKVM server (using heuristic #1 -- newer AST2400 BMC?).');
                 return this._negotiate_aten_auth();
             }
 

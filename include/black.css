@@ -69,3 +69,8 @@
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9dd53a', endColorstr='#7cbc0a',GradientType=0 ); /* IE6-9 */
   background: linear-gradient(top, #9dd53a 0%,#a1d54f 50%,#80c217 51%,#7cbc0a 100%); /* W3C */
 }
+
+#noVNC_settings_menu .quality-slider:before
+{
+  background-color:white;
+}

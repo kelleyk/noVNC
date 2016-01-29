@@ -37,6 +37,7 @@ var UI;
 
         isTouchDevice: false,
         isSafari: false,
+        videoSettingsInit: false,
         rememberedClipSetting: null,
         lastKeyboardinput: null,
         defaultKeyboardinputLen: 100,
@@ -191,7 +192,8 @@ var UI;
                                   'onClipboard': UI.clipReceive,
                                   'onFBUComplete': UI.FBUComplete,
                                   'onFBResize': UI.updateViewDrag,
-                                  'onDesktopName': UI.updateDocumentTitle});
+                                  'onDesktopName': UI.updateDocumentTitle,
+                                  'onVideoSettingsChanged': UI.updateVideoSettings});
                 return true;
             } catch (exc) {
                 UI.updateState(null, 'fatal', null, 'Unable to create RFB client -- ' + exc);
@@ -238,7 +240,7 @@ var UI;
             $D("noVNC_clipboard_clear_button").onclick = UI.clipClear;
 
             $D("noVNC_settings_menu").onmouseover = UI.displayBlur;
-            $D("noVNC_settings_menu").onmouseover = UI.displayFocus;
+            $D("noVNC_settings_menu").onmouseout = UI.displayFocus;
             $D("noVNC_apply").onclick = UI.settingsApply;
 
             $D("noVNC_connect_button").onclick = UI.connect;
@@ -619,6 +621,19 @@ var UI;
             UI.saveSetting('stylesheet');
             UI.saveSetting('logging');
 
+            //send message to update video settings, if they were ever initialised. Note we don't store these; they come from the
+            // current server connection, when current server is an AST2100 board, using 0x57 ATEN encoding.
+            if(UI.videoSettingsInit)
+            {
+                //12 degrees...
+                var iQPerc = Math.round(($D('aten-slider').perc / 100) * 11);
+                //advanced or not...
+                var iSubMode = $D('aten-advanced').checked ? 444 : 422;
+                
+                //2 settings; 1 slider; set to match.
+                atenChangeVideoSettings(iQPerc, iQPerc, iSubMode );
+            }
+
             // Settings with immediate (non-connected related) effect
             WebUtil.selectStylesheet(UI.getSetting('stylesheet'));
             WebUtil.init_logging(UI.getSetting('logging'));
@@ -806,6 +821,74 @@ var UI;
             document.title = name + " - noVNC";
         },
 
+        updateVideoSettings: function (videoSettings) {
+            Util.Info('Video settings changed:');
+            Util.Info(videoSettings);
+
+            //First run: tell UI to show video quality controls, now that we know we are on a machine
+            // that supports them, and we know their current values.
+            if(!UI.videoSettingsInit)
+            {
+                $D('video-settings-quality').style.display = "block";
+                $D('video-settings-advanced').style.display = "block";
+                UI.slider('aten-slider');
+                UI.videoSettingsInit = true;
+            }
+
+            // set values of controls from videoSettings
+            // - there are 12 degrees of quality... but 2 settings from 1 slider.
+            // Average them both in case they differ:
+            var iQ = (videoSettings.quantTableSelectorLuma + videoSettings.quantTableSelectorChroma) / 2;
+            var iQperc = Math.round((iQ / 11 ) * 100);
+
+            $D('aten-advanced').checked = (videoSettings.subsamplingMode == 444);
+            UI.setSliderPerc('aten-slider',iQperc);
+        },
+
+        slider: function(id) {
+            var slider = $D(id),
+            btn = slider.children[0],
+            btnWidth = 8,
+            sldWidth = 120,
+            down = false,
+            rect;
+
+            slider.style.width = sldWidth + 'px';
+            btn.style.width = btnWidth + 'px';
+            btn.style.left = -btnWidth + 'px';
+            btn.style.marginLeft = (btnWidth / 2) + 'px';
+
+            slider.addEventListener("mousedown", function(e) {
+                rect = this.getBoundingClientRect();
+                down = true;
+                update(e);
+                return false;
+            });
+
+            document.addEventListener("mousemove", function(e) {
+                update(e);
+            });
+
+            document.addEventListener("mouseup", function() {
+                down = false;
+            });
+
+            function update(e) {
+                if (down && e.pageX >= rect.left && e.pageX <= (rect.left + rect.width)) {
+                    btn.style.left = e.pageX - rect.left - btnWidth + 'px';
+                    slider.perc = Math.round(((e.pageX - rect.left) / rect.width) * 100);
+                }
+            }
+        },
+
+        //call to set position without user interaction (from default value)
+        setSliderPerc: function(id, perc) {
+            var slider = $D(id),
+            btn = slider.children[0];
+            btn.style.left = (Math.round(120 * ( perc / 100 )) - 8) + 'px';
+            slider.perc = perc;
+        },
+
         clipReceive: function(rfb, text) {
             Util.Debug(">> UI.clipReceive: " + text.substr(0,40) + "...");
             $D('noVNC_clipboard_text').value = text;
@@ -857,20 +940,22 @@ var UI;
 
             $D('noVNC_logo').style.display = "block";
             $D('noVNC_container').style.display = "none";
+            
+            $D('video-settings-quality').style.display = "none";
+                $D('video-settings-advanced').style.display = "none";
+            UI.videoSettingsInit = false;
 
             // Don't display the connection settings until we're actually disconnected
         },
 
         displayBlur: function() {
             if (!UI.rfb) return;
-
             UI.rfb.get_keyboard().set_focused(false);
             UI.rfb.get_mouse().set_focused(false);
         },
 
         displayFocus: function() {
             if (!UI.rfb) return;
-
             UI.rfb.get_keyboard().set_focused(true);
             UI.rfb.get_mouse().set_focused(true);
         },

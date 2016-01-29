@@ -169,6 +169,7 @@ var RFB;
             'onFBResize': function () { },          // onFBResize(rfb, width, height): frame buffer resized
             'onDesktopName': function () { },       // onDesktopName(rfb, name): desktop name received
             'onXvpInit': function () { },           // onXvpInit(version): XVP extensions active for this connection
+            'onVideoSettingsChanged': function () { }, // onVideoSettingsChanged(videoSettings) : AST 2100 video quality settings changed in latest FBU
         });
 
         // main setup
@@ -1568,6 +1569,7 @@ var RFB;
         ['onFBResize', 'rw', 'func'],           // onFBResize(rfb, width, height): frame buffer resized
         ['onDesktopName', 'rw', 'func'],        // onDesktopName(rfb, name): desktop name received
         ['onXvpInit', 'rw', 'func'],            // onXvpInit(version): XVP extensions active for this connection
+        ['onVideoSettingsChanged', 'rw', 'func'], // onVideoSettingsChanged(videoSettings): AST 2100 video quality settings changed in latest FBU
     ]);
 
     RFB.prototype.set_local_cursor = function (cursor) {
@@ -2659,10 +2661,7 @@ var RFB;
                         // Last argument is offset.
                         // display._rgbxImageData(x, y, display._viewportLoc.x, display._viewportLoc.y, width, height, buf, 0);
                     },
-                    videoSettingsChangedCallback: function (videoSettings) {
-                        console.log('Video settings changed:');
-                        console.log(videoSettings);
-                    }
+                    videoSettingsChangedCallback: this._onVideoSettingsChanged //pass UI listener straight through
                 });
             }
             

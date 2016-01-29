@@ -188,6 +188,20 @@
                         </select></label>
                     </li>
                     <hr>
+
+                    <!-- ATEN AST-2100 quality controls -->
+                    <li id='video-settings-quality' style='display:none'>
+                        <div class='slider-area'>
+                            <div class='slider-label'>Video Quality</div>
+                            <div class="slider-front">low</div>
+                            <div class="quality-slider" id="aten-slider">
+                              <span></span>
+                            </div>
+                            <div class="slider-end">high</div>
+                        </div>
+                    </li>
+                    <li id='video-settings-advanced' style='display:none'><input id="aten-advanced" type="checkbox" /> Advanced Subsampling</li>
+
                     <li><input type="button" id="noVNC_apply" value="Apply"></li>
                 </ul>
             </span>

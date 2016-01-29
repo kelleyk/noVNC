@@ -12,6 +12,17 @@ project).
 ========================================================================================================================
 ========================================================================================================================
 
+- three major parts of implementation
+
+- Text/console quality in 4:4:4 will ALSO be higher because that's the only mode where VQ blocks happen, and VQ blocks
+  give very high quality for blocks containing only a few colors.
+
+- Currently unchecked, but we expect to get a "video settings changed" message from the Ast2100Decoder after the first
+  framebuffer update message that we send it following a settings change command.
+
+========================================================================================================================
+========================================================================================================================
+
 - Much more extensive notes on the reverse engineering process, the iKVM protocol, the 0x59 video encoding, and the rest
   of this adventure are forthcoming!  There is also a Python implementation of many of these ideas that is
   better-documented (and where clarity has not been sacrificed for performance).  Stay tuned!

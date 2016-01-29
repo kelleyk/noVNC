@@ -147,6 +147,53 @@ input[type=button]:active, select:active {
   background: linear-gradient(to top, rgb(255, 255, 255), rgb(250, 250, 250));
 }
 
+/* Settings slider: currently only used by AST2100 code, but could be reused.  Horribly messy, like most of the rest of the UI widgetry. */
+#noVNC_settings .slider-end,
+#noVNC_settings .slider-front {
+  display: inline-block;
+  vertical-align: top;
+  font-size: 0.8em;
+}
+#noVNC_settings .slider-bar {
+  margin: 0 10px;
+}
+#noVNC_settings .slider-area {
+  margin-top: 2px;  /* Just to keep the slider from getting too close to the label above. */
+}
+#noVNC_settings .slider-front {
+  text-align: right;
+}
+#noVNC_settings .slider-label {
+  width: 110px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+/* Settings slider: video quality (quantization table selector) in AST2100 mode. */
+#noVNC_settings #noVNC_setting_ast2100_quality {
+  height: 20px;
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+}
+#noVNC_settings #noVNC_setting_ast2100_quality:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: black;
+}
+#noVNC_settings #noVNC_setting_ast2100_quality span {
+  display: block;
+  height: inherit;
+  position: relative;
+  z-index: 2;
+  background-color: gray;
+}
+
 /* ----------------------------------------
  * WebKit centering hacks
  * ----------------------------------------

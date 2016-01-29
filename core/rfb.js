@@ -105,6 +105,8 @@
         subrects: 0,            // RRE
         lines: 0,               // RAW
         tiles: 0,               // HEXTILE
+        aten_len: -1,           // ATEN
+        aten_type: -1,          // ATEN
         bytes: 0,
         x: 0,
         y: 0,
@@ -169,6 +171,8 @@
         'wsProtocols': ['binary'],              // Protocols to use in the WebSocket connection
         'repeaterID': '',                       // [UltraVNC] RepeaterID to connect to
         'viewportDrag': false,                  // Move the viewport on mouse drags
+        'ast2100_quality': -1,                  // If set, use this quality upon connection to a server using the AST2100 video encoding.  Ranges from 0 (lowest) to 0xB (highest) quality.
+        'ast2100_subsamplingMode': -1,          // If set, use this subsampling mode upon connection to a serve rusing the AST2100 video encoding.  The value may either be 444 or 422 (which is really 4:2:0 subsampling).
         
         // Callback functions
         'onUpdateState': function () { },       // onUpdateState(rfb, state, oldstate): connection state change
@@ -181,7 +185,8 @@
         'onFBUComplete': function () { },       // onFBUComplete(rfb, fbu): RFB FBU received and processed
         'onFBResize': function () { },          // onFBResize(rfb, width, height): frame buffer resized
         'onDesktopName': function () { },       // onDesktopName(rfb, name): desktop name received
-        'onXvpInit': function () { }            // onXvpInit(version): XVP extensions active for this connection
+        'onXvpInit': function () { },           // onXvpInit(version): XVP extensions active for this connection
+        'ast2100_onVideoSettingsChanged': function () { }
     });
 
     // main setup
@@ -1760,6 +1765,8 @@
         ['wsProtocols', 'rw', 'arr'],           // Protocols to use in the WebSocket connection
         ['repeaterID', 'rw', 'str'],            // [UltraVNC] RepeaterID to connect to
         ['viewportDrag', 'rw', 'bool'],         // Move the viewport on mouse drags
+        ['ast2100_quality', 'rw','int'],                 // 0-100, force quality mode for ATEN AST2100 server
+        ['ast2100_subsamplingMode', 'rw', 'int'],          // Use advanced subampling fot ATEN AST2100 server
 
         // Callback functions
         ['onUpdateState', 'rw', 'func'],        // onUpdateState(rfb, state, oldstate): connection state change
@@ -1772,7 +1779,8 @@
         ['onFBUComplete', 'rw', 'func'],        // onFBUComplete(rfb, fbu): RFB FBU received and processed
         ['onFBResize', 'rw', 'func'],           // onFBResize(rfb, width, height): frame buffer resized
         ['onDesktopName', 'rw', 'func'],        // onDesktopName(rfb, name): desktop name received
-        ['onXvpInit', 'rw', 'func']             // onXvpInit(version): XVP extensions active for this connection
+        ['onXvpInit', 'rw', 'func'],            // onXvpInit(version): XVP extensions active for this connection
+        ['ast2100_onVideoSettingsChanged', 'rw', 'func'], // onVideoSettingsChanged(videoSettings): AST2100 video quality settings changed in latest FBU
     ]);
 
     RFB.prototype.set_local_cursor = function (cursor) {
@@ -2955,7 +2963,7 @@
             }
 
             if (!this._aten_ast2100_dec) {
-                // var that = this;
+                var _rfb = this;
                 var display = this._display;
                 this._aten_ast2100_dec = new Ast2100Decoder({
                     width: this._FBU.width,
@@ -2968,6 +2976,9 @@
 
                         // Last argument is offset.
                         // display._rgbxImageData(x, y, display._viewportLoc.x, display._viewportLoc.y, width, height, buf, 0);
+                    },
+                    videoSettingsChangedCallback: function (settings) {
+                        _rfb._ast2100_onVideoSettingsChanged(settings);
                     }
                 });
             }

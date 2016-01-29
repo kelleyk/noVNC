@@ -2658,6 +2658,10 @@ var RFB;
 
                         // Last argument is offset.
                         // display._rgbxImageData(x, y, display._viewportLoc.x, display._viewportLoc.y, width, height, buf, 0);
+                    },
+                    videoSettingsChangedCallback: function (videoSettings) {
+                        console.log('Video settings changed:');
+                        console.log(videoSettings);
                     }
                 });
             }

@@ -19,7 +19,9 @@ var verboseVideoSettings = true;
 // to make sending these messages easier.  Change the verboseVideoSettings variable above to get console output showing
 // you when the server changes what it is sending (i.e. in response to this message).
 var atenChangeVideoSettings = function (lumaQt, chromaQt, subsamplingMode) {
-    RFB.messages.atenChangeVideoSettings(UI.rfb._sock, lumaQt, chromaQt, subsamplingMode);
+    //pick correct object to get the rfb websock from: in UI if enabled, in global rfb if using vnc_auto
+    var sock = typeof UI !== "undefined" ? UI.rfb._sock : rfb._sock;
+    RFB.messages.atenChangeVideoSettings(sock, lumaQt, chromaQt, subsamplingMode);
 };
 
 

@@ -189,19 +189,33 @@
                     </li>
                     <hr>
 
-                    <!-- ATEN AST-2100 quality controls -->
-                    <li id='video-settings-quality' style='display:none'>
-                        <div class='slider-area'>
-                            <div class='slider-label'>Video Quality</div>
-                            <div class="slider-front">low</div>
-                            <div class="quality-slider" id="aten-slider">
-                              <span></span>
+                    <!--
+                       AST2100 (0x57) video encoding only:
+                       - Video quality slider (quantization table selector)
+                       - Subsampling mode
+                    -->
+                    <div id="noVNC_ast2100_settings" style="display:none">
+                        <strong>AST2100 video settings</strong><br />
+                        <li>
+                            <label>Video quality</label>
+                            <div class="slider-area">
+                                <div class="slider-front">low</div>
+                                <div class="slider-bar" id="noVNC_ast2100_quality">
+                                    <span></span>
+                                </div>
+                                <div class="slider-end">high</div>
                             </div>
-                            <div class="slider-end">high</div>
-                        </div>
-                    </li>
-                    <li id='video-settings-advanced' style='display:none'><input id="aten-advanced" type="checkbox" /> Advanced Subsampling</li>
-
+                        </li>
+                        <li>
+                            <label>Subsampling mode</label><br />
+                            <select id="noVNC_ast2100_subsampling">
+                                <option value="444">4:4:4 (no subsampling; higher quality)</option>
+                                <option value="422">4:2:0 (chroma subsampling; lower quality)</option>
+                            </select>
+                        </li>
+                        <hr>
+                    </div>
+                    
                     <li><input type="button" id="noVNC_apply" value="Apply"></li>
                 </ul>
             </span>

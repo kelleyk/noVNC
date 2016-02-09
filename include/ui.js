@@ -37,7 +37,6 @@ var UI;
 
         isTouchDevice: false,
         isSafari: false,
-        videoSettingsInit: false,
         rememberedClipSetting: null,
         lastKeyboardinput: null,
         defaultKeyboardinputLen: 100,
@@ -47,6 +46,12 @@ var UI;
         altDown: false,
         altGrDown: false,
 
+        // True if we are connected to an ATEN iKVM server speaking the AST2100 video encoding.
+	    // This variable tracks whether the extra UI elements used to configure video settings
+	    // for the AST2100 encoding have been shown yet; it's set on the first FramebufferUpdate
+	    // message that we receive.
+        _ast2100_videoSettingsInitialized: false,
+        
         // Setup rfb object, load settings from browser storage, then call
         // UI.init to setup the UI/menus
         load: function (callback) {
@@ -193,7 +198,7 @@ var UI;
                                   'onFBUComplete': UI.FBUComplete,
                                   'onFBResize': UI.updateViewDrag,
                                   'onDesktopName': UI.updateDocumentTitle,
-                                  'onVideoSettingsChanged': UI.updateVideoSettings});
+                                  'ast2100_onVideoSettingsChanged': UI.ast2100_handleVideoSettingsChanged});
                 return true;
             } catch (exc) {
                 UI.updateState(null, 'fatal', null, 'Unable to create RFB client -- ' + exc);
@@ -621,17 +626,10 @@ var UI;
             UI.saveSetting('stylesheet');
             UI.saveSetting('logging');
 
-            //send message to update video settings, if they were ever initialised. Note we don't store these; they come from the
-            // current server connection, when current server is an AST2100 board, using 0x57 ATEN encoding.
-            if(UI.videoSettingsInit)
-            {
-                //12 degrees...
-                var iQPerc = Math.round(($D('aten-slider').perc / 100) * 11);
-                //advanced or not...
-                var iSubMode = $D('aten-advanced').checked ? 444 : 422;
-                
-                //2 settings; 1 slider; set to match.
-                atenChangeVideoSettings(iQPerc, iQPerc, iSubMode );
+            if (UI._ast2100_videoSettingsInitialized) {
+                var videoSettings = UI.ast2100_getConfiguredSettings();
+                if (videoSettings != UI._ast2100_serverVideoSettings)
+                    atenChangeVideoSettings(videoSettings.quantTableSelectorLuma, videoSettings.quantTableSelectorChroma, videoSettings.subsamplingMode);
             }
 
             // Settings with immediate (non-connected related) effect
@@ -641,8 +639,6 @@ var UI;
             UI.updateViewDrag();
             //Util.Debug("<< settingsApply");
         },
-
-
 
         setPassword: function() {
             UI.rfb.sendPassword($D('noVNC_password').value);
@@ -704,6 +700,7 @@ var UI;
                 case 'disconnected':
                     $D('noVNC_logo').style.display = "block";
                     $D('noVNC_container').style.display = "none";
+                    UI.ast2100_reset();
                     /* falls through */
                 case 'loaded':
                     klass = "noVNC_status_normal";
@@ -821,37 +818,109 @@ var UI;
             document.title = name + " - noVNC";
         },
 
-        updateVideoSettings: function (videoSettings) {
-            Util.Info('Video settings changed:');
+        ast2100_handleVideoSettingsChanged: function (settings) {
+            if (!UI._ast2100_videoSettingsInitialized)
+                UI.ast2100_setDefaultSettings(settings);
+            UI.ast2100_updateVideoSettings(settings);
+        },
+        
+        // Called the first time we receive a FramebufferUpdate object.  Responsible for telling the server about any configured default settings.
+        ast2100_setDefaultSettings: function (settings) {
+            // Convert the settings that noVNC has been configured to set for all AST2100 servers to the familiar videoSettings format.
+            var defaultQuality = parseInt(UI.ast2100_quality);
+            var defaultSettings = {
+                quantTableSelectorLuma: defaultQuality,
+                quantTableSelectorChroma: defaultQuality,
+                subsamplingMode: parseInt(UI.ast2100_subsamplingMode)
+            };
+            
+            // If defaults were not given or were invalid, stick with what the server is already using.
+            if (!(defaultSettings.subsamplingMode == 422 || defaultSettings.subsamplingMode == 444))
+                defaultSettings.subsamplingMode = settings.subsamplingMode;
+            if (!inRangeIncl(defaultQuality, 0x0, 0xB)) {
+                defaultSettings.quantTableSelectorLuma = settings.quantTableSelectorLuma;
+                defaultSettings.quantTableSelectorChroma = settings.quantTableSelectorChroma;
+            }
+            
+            if (defaultSettings != settings)
+                atenChangeVideoSettings(defaultSettings.quantTableSelectorLuma, defaultSettings.quantTableSelectorChroma, defaultSettings.subsamplingMode);
+        },
+        
+        // Should be called at init time and after disconnects.  This is sort of the opposite of _init().
+        ast2100_reset: function() {
+            UI.ast2100_setSettingsVisible(false);
+            UI._ast2100_videoSettingsInitialized = false;
+            UI._ast2100_serverVideoSettings = undefined;
+        },
+        
+        // Updates the UI to reflect values received from the server.
+        ast2100_updateVideoSettings: function (videoSettings) {
+            Util.Info("AST2100 video settings changed:");
             Util.Info(videoSettings);
 
-            //First run: tell UI to show video quality controls, now that we know we are on a machine
+            // We use this to tell if the user changed anything when they apply settings.
+            UI._ast2100_serverVideoSettings = videoSettings;
+            
+            // First run: tell UI to show video quality controls, now that we know we are on a machine
             // that supports them, and we know their current values.
-            if(!UI.videoSettingsInit)
-            {
-                $D('video-settings-quality').style.display = "block";
-                $D('video-settings-advanced').style.display = "block";
-                UI.slider('aten-slider');
-                UI.videoSettingsInit = true;
+            if (!UI._ast2100_videoSettingsInitialized) {
+                UI.slider("noVNC_ast2100_quality", {minVal: 0x0, maxVal: 0xB});  // XXX: initial value is ignored
+                this.ast2100_setSettingsVisible(true);
+                UI._ast2100_videoSettingsInitialized = true;
             }
-
-            // set values of controls from videoSettings
-            // - there are 12 degrees of quality... but 2 settings from 1 slider.
-            // Average them both in case they differ:
-            var iQ = (videoSettings.quantTableSelectorLuma + videoSettings.quantTableSelectorChroma) / 2;
-            var iQperc = Math.round((iQ / 11 ) * 100);
-
-            $D('aten-advanced').checked = (videoSettings.subsamplingMode == 444);
-            UI.setSliderPerc('aten-slider',iQperc);
+            
+            // Average the two quant table selectors as a poor way of dealing with the fact that they can, technically,
+            // be different.
+            var quality = ~~((videoSettings.quantTableSelectorLuma + videoSettings.quantTableSelectorChroma) / 2);
+            $D("noVNC_ast2100_quality").setValue(quality);
+            
+            // Either 444 or 422 (which is really 4:2:0).
+            $D("noVNC_ast2100_subsampling").value = videoSettings.subsamplingMode;
         },
 
-        slider: function(id) {
+        // Returns the current state of the UI.
+        ast2100_getConfiguredSettings: function () {
+            var quality = $D("noVNC_ast2100_quality").value;
+            return {
+                quantTableSelectorLuma: quality,
+                quantTableSelectorChroma: quality,
+                subsamplingMode: parseInt($D("noVNC_ast2100_subsampling").value)
+            };
+        },
+
+        ast2100_setSettingsVisible: function (visible) {
+            var propertyValue;
+            if (visible) {
+                propertyValue = 'block';
+                Util.Info('Showing AST2100 UI.');
+            } else {
+                Util.Info('Hiding AST2100 UI.');
+                propertyValue = 'none';
+            }
+            
+            $D("noVNC_ast2100_settings").style.display = propertyValue;
+        },
+
+        // Create a slider widget.  Based on code borrowed from: XXX: TODO:
+        slider: function(id, defaults) {
             var slider = $D(id),
-            btn = slider.children[0],
-            btnWidth = 8,
-            sldWidth = 120,
-            down = false,
-            rect;
+                btn = slider.children[0],
+                btnWidth = 8,
+                sldWidth = 120,
+                down = false,
+                minVal = defaults.minVal,
+                maxVal = defaults.maxVal,
+                defaultValue = defaults.value,
+                snapToInt = true,
+                snapDuringDrag = true,
+                rect;
+            
+            if (minVal === undefined || minVal === null)
+                minVal = 0;
+            if (maxVal === undefined || maxVal === null)
+                maxVal = 100;
+            if (defaultValue === undefined || defaultValue === null)
+                defaultValue = minVal;
 
             slider.style.width = sldWidth + 'px';
             btn.style.width = btnWidth + 'px';
@@ -861,32 +930,39 @@ var UI;
             slider.addEventListener("mousedown", function(e) {
                 rect = this.getBoundingClientRect();
                 down = true;
-                update(e);
+                updatePosition(e);  // important to catch clicks that don't become drags
                 return false;
             });
 
             document.addEventListener("mousemove", function(e) {
-                update(e);
+                if (down)
+                    updatePosition(e);
             });
 
             document.addEventListener("mouseup", function() {
                 down = false;
             });
 
-            function update(e) {
-                if (down && e.pageX >= rect.left && e.pageX <= (rect.left + rect.width)) {
-                    btn.style.left = e.pageX - rect.left - btnWidth + 'px';
-                    slider.perc = Math.round(((e.pageX - rect.left) / rect.width) * 100);
-                }
-            }
-        },
+            function updatePosition(e) {
+                // Get value based on mouse position.
+                var rawValue = minVal + Math.round(((e.pageX - rect.left) / rect.width) * (maxVal - minVal));
+                if (snapDuringDrag)
+                    rawValue = ~~rawValue;
+                
+                // Clamp to range.
+                rawValue = Math.max(minVal, Math.min(maxVal, rawValue));
 
-        //call to set position without user interaction (from default value)
-        setSliderPerc: function(id, perc) {
-            var slider = $D(id),
-            btn = slider.children[0];
-            btn.style.left = (Math.round(120 * ( perc / 100 )) - 8) + 'px';
-            slider.perc = perc;
+                // Update displayed position of draggable UI element.
+                slider.setValue(rawValue, true);
+            }
+
+            slider.setValue = function (value, internal) {
+                slider.value = value;
+                btn.style.left = (((value - minVal) / (maxVal - minVal) * sldWidth) - btnWidth) + 'px';  // XXX: @KK: check my math here
+            };
+
+            slider.setValue(defaultValue, true);  // slider.value = defaults.value;
+            
         },
 
         clipReceive: function(rfb, text) {
@@ -940,10 +1016,6 @@ var UI;
 
             $D('noVNC_logo').style.display = "block";
             $D('noVNC_container').style.display = "none";
-            
-            $D('video-settings-quality').style.display = "none";
-                $D('video-settings-advanced').style.display = "none";
-            UI.videoSettingsInit = false;
 
             // Don't display the connection settings until we're actually disconnected
         },

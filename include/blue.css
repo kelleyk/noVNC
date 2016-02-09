@@ -62,7 +62,6 @@
   background-color:#04073d;
 }
 
-#noVNC_settings_menu .quality-slider:before
-{
+#noVNC_settings_menu .ast2100-quality-slider:before {
   background-color:white;
 }

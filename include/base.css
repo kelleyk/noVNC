@@ -112,47 +112,52 @@ html {
 #noVNC_apply {
   float:right;
 }
+
+/* Settings slider: currently only used by AST2100 code, but could be reused.  Horribly messy, like most of the rest of the UI widgetry. */
 #noVNC_settings_menu .slider-end,
 #noVNC_settings_menu .slider-front {
-  display:inline-block;
+  display: inline-block;
   vertical-align: top;
-  font-size:0.8em;
+  font-size: 0.8em;
+}
+#noVNC_settings_menu .slider-bar {
+  margin: 0 10px;
+}
+#noVNC_settings_menu .slider-area {
+  margin-top: 2px;  /* Just to keep the slider from getting too close to the label above. */
 }
 #noVNC_settings_menu .slider-front {
-  text-align:right;
+  text-align: right;
 }
-
 #noVNC_settings_menu .slider-label {
-  width:110px;
-  display:inline-block;
+  width: 110px;
+  display: inline-block;
   vertical-align: top;
 }
 
-#noVNC_settings_menu .quality-slider {
-  height:20px;
-  margin:0 auto 1em;
-  position:relative;
-  cursor:pointer;
-  display:inline-block;
+/* Settings slider: video quality (quantization table selector) in AST2100 mode. */
+#noVNC_settings_menu #noVNC_ast2100_quality {
+  height: 20px;
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
 }
-
-#noVNC_settings_menu .quality-slider:before {
-  content:"";
-  display:block;
-  position:absolute;
-  top:9px;
-  left:0;
-  width:100%;
-  height:2px;
-  background-color:black;
+#noVNC_settings_menu #noVNC_ast2100_quality:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: black;
 }
-
-#noVNC_settings_menu .quality-slider span {
-  display:block;
-  height:inherit;
-  position:relative;
-  z-index:2;
-  background-color:gray;
+#noVNC_settings_menu #noVNC_ast2100_quality span {
+  display: block;
+  height: inherit;
+  position: relative;
+  z-index: 2;
+  background-color: gray;
 }
 
 /* Do not set width/height for VNC_screen or VNC_canvas or incorrect

@@ -136,8 +136,6 @@ var RFB;
         this._screen_id = 0;
         this._screen_flags = 0;
 
-        this._autoQualityChecked = false;
-
         // Mouse state
         this._mouse_buttonMask = 0;
         this._mouse_arr = [];
@@ -160,8 +158,8 @@ var RFB;
             'wsProtocols': ['binary'],              // Protocols to use in the WebSocket connection
             'repeaterID': '',                       // [UltraVNC] RepeaterID to connect to
             'viewportDrag': false,                  // Move the viewport on mouse drags
-            'autoQt': -1,                           // If set, use this quality upon connection to ATEN AST2100+ server (range 0-100, unset = -1)
-            'autoAdvSubs': -1,                      // If set, use this advanced subsampling mode upon connection to ATEN AST2100+ server (true|false, unset=-1)
+            'ast2100_quality': -1,                  // If set, use this quality upon connection to a server using the AST2100 video encoding.  Ranges from 0 (lowest) to 0xB (highest) quality.
+            'ast2100_subsamplingMode': -1,          // If set, use this subsampling mode upon connection to a serve rusing the AST2100 video encoding.  The value may either be 444 or 422 (which is really 4:2:0 subsampling).
 
             // Callback functions
             'onUpdateState': function () { },       // onUpdateState(rfb, state, oldstate, statusMsg): state update/change
@@ -173,7 +171,7 @@ var RFB;
             'onFBResize': function () { },          // onFBResize(rfb, width, height): frame buffer resized
             'onDesktopName': function () { },       // onDesktopName(rfb, name): desktop name received
             'onXvpInit': function () { },           // onXvpInit(version): XVP extensions active for this connection
-            'onVideoSettingsChanged': function () { }, // onVideoSettingsChanged(videoSettings) : ATEN AST2100 video quality settings changed in latest FBU
+            'ast2100_onVideoSettingsChanged': function () { }
         });
 
         // main setup
@@ -1562,8 +1560,8 @@ var RFB;
         ['wsProtocols', 'rw', 'arr'],           // Protocols to use in the WebSocket connection
         ['repeaterID', 'rw', 'str'],            // [UltraVNC] RepeaterID to connect to
         ['viewportDrag', 'rw', 'bool'],         // Move the viewport on mouse drags
-        ['autoQt', 'rw','int'],                 // 0-100, force quality mode for ATEN AST2100 server
-        ['autoAdvSubs', 'rw', 'int'],          // Use advanced subampling fot ATEN AST2100 server
+        ['ast2100_quality', 'rw','int'],                 // 0-100, force quality mode for ATEN AST2100 server
+        ['ast2100_subsamplingMode', 'rw', 'int'],          // Use advanced subampling fot ATEN AST2100 server
 
         // Callback functions
         ['onUpdateState', 'rw', 'func'],        // onUpdateState(rfb, state, oldstate, statusMsg): RFB state update/change
@@ -1575,7 +1573,7 @@ var RFB;
         ['onFBResize', 'rw', 'func'],           // onFBResize(rfb, width, height): frame buffer resized
         ['onDesktopName', 'rw', 'func'],        // onDesktopName(rfb, name): desktop name received
         ['onXvpInit', 'rw', 'func'],            // onXvpInit(version): XVP extensions active for this connection
-        ['onVideoSettingsChanged', 'rw', 'func'], // onVideoSettingsChanged(videoSettings): AST2100 video quality settings changed in latest FBU
+        ['ast2100_onVideoSettingsChanged', 'rw', 'func'], // onVideoSettingsChanged(videoSettings): AST2100 video quality settings changed in latest FBU
     ]);
 
     RFB.prototype.set_local_cursor = function (cursor) {
@@ -2667,32 +2665,8 @@ var RFB;
                         // Last argument is offset.
                         // display._rgbxImageData(x, y, display._viewportLoc.x, display._viewportLoc.y, width, height, buf, 0);
                     },
-                    videoSettingsChangedCallback: function(settings){
-                        //on first receive, check & use autoSettings, if provided & in valid range.
-                        if(!_rfb._autoQualityChecked)
-                        {
-                            var bAutoSend = false;
-                            if(_rfb._autoQt > -1 && _rfb._autoQt <= 100)
-                            {
-                                bAutoSend = true;
-                                //translate percentage to 1 of 12 quality degrees; set both tables to the same
-                                settings.quantTableSelectorLuma = settings.quantTableSelectorChroma = Math.round((_rfb._autoQt / 100) * 11);
-                            }
-                            if(_rfb._autoAdvSubs == 0 || _rfb._autoAdvSubs == 1)
-                            {
-                                bAutoSend = true;
-                                settings.subsamplingMode = _rfb._autoAdvSubs == 1 ? 444 : 422;
-                            }
-
-                            _rfb._autoQualityChecked = true;
-
-                            if(bAutoSend)
-                            {
-                                atenChangeVideoSettings(settings.quantTableSelectorLuma, settings.quantTableSelectorChroma, settings.subsamplingMode);
-                            }
-                        }
-                        //pass UI listener through to set any controls
-                        _rfb._onVideoSettingsChanged(settings);
+                    videoSettingsChangedCallback: function (settings) {
+                        _rfb._ast2100_onVideoSettingsChanged(settings);
                     }
                 });
             }

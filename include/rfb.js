@@ -867,7 +867,7 @@ var RFB;
                 // is nonzero.)  Further, TightVNC servers seem to be support both 0x02 and 0x10 security types, whereas
                 // ATEN iKVM servers advertise only support for 0x10.  (Are there *other* VNC servers that only support
                 // 0x10?)
-                if (this._rfb_version === 3.8 && arrayEq(this._rfb_server_supported_security_types, [0x10]) && (numTunnels < 0 || numTunnels > 0x1000000)) {
+                if (this._rfb_version === 3.8 && arrayEq(this._rfb_server_supported_security_types, [0x10]) && (numTunnels <= 0 || numTunnels > 0x1000000)) {
                     Util.Info('Detected ATEN iKVM server (using heuristic #0 -- older Winbond/Nuvoton or Renesas BMC?).');
                     return this._negotiate_aten_auth();
                 }

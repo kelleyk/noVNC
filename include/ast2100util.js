@@ -1,7 +1,7 @@
 /* (c) Copyright 2015-2016 Kevin Kelley <kelleyk@kelleyk.net>. */
 
 
-/*
+
 function fmt_rgb_buf (n, buf) {
     var s = "";
     for (var y = 0; y < n; ++y) {
@@ -13,7 +13,7 @@ function fmt_rgb_buf (n, buf) {
     }
     return s;
 }
-*/
+
 var fmt_u8 = function (x) {
     var pad = '00';
     var s = x.toString(16);
@@ -27,7 +27,7 @@ var fmt_u16 = function (x) {
 var fmt_u32 = function (x) {  // cheesy way to ger around the sign bit
     return fmt_u16(x >>> 16) + fmt_u16(x & 0xFFFF);
 };
-/*
+
 var fmt_s8 = function (x) {
     if (x < 0)
         x += (1 << 8);
@@ -47,14 +47,15 @@ var fmt_s32 = function (x) {
 };
 
 var fmt_array = function(f, xx) {
-    xx = Array.from(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
+    xx = new Array(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
     return '[' + xx.map(f).join(', ') + ']';
 };
-
+/*
 var hexlify_u8a = function (xx) {
-    xx = Array.from(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
+    xx = new Array(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
     return xx.map(fmt_u8).join('');
 };
+*/
 
 var fmt_u8a = function (xx) { return fmt_array(fmt_u8, xx); };
 var fmt_u16a = function (xx) { return fmt_array(fmt_u16, xx); };
@@ -62,7 +63,7 @@ var fmt_u32a = function (xx) { return fmt_array(fmt_u32, xx); };
 var fmt_s8a = function (xx) { return fmt_array(fmt_s8, xx); };
 var fmt_s16a = function (xx) { return fmt_array(fmt_s16, xx); };
 var fmt_s32a = function (xx) { return fmt_array(fmt_s32, xx); };
- */
+
 
 var inRangeIncl = function (x, a, b) {
     return (x >= a && x <= b);

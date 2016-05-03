@@ -193,12 +193,12 @@ describe('ATEN_AST2100 video encoding', function() {
 
             AST2100IDCT.idct_fixed_aan(luma_quant_table, dataUnit, outputBuf);
 
-            // console.log(result);
-
+            /*
             console.log('expected:');
             console.log(fmt_u8a(expected));
             console.log('result:');
             console.log(fmt_u8a(outputBuf));
+             */
 
             // XXX: TEMPORARY -- figure out this rounding issue
             // expect(result).to.deep.equal(expected);
@@ -258,7 +258,7 @@ describe('ATEN_AST2100 video encoding', function() {
         it('should successfully load a codebook (colors)', function () {
             var data = buf_swap32(parseHex('bc010b0b e0c5fb45 01010420 203fffff ffffffc0 00240000 00000000 00000000 0a142850'));
             data = data.slice(4);
-
+            
             var stream = new BitStream({data: data});  // Strip off quant table selectors and subsampling mode.
             var controlFlag = stream.read(4);
             expect(controlFlag).to.equal(0xE);
@@ -267,6 +267,7 @@ describe('ATEN_AST2100 video encoding', function() {
             expect(xMcuPos).to.equal(0xC);
             expect(yMcuPos).to.equal(0x5F);
             
+            dec.subsamplingMode = 444;  // required or an assertion in the VQ code will fail
             dec._stream = stream;
             dec._parseVqBlock(1);  // codewordSize=1
             expect(dec._vqCodewordLookup).to.deep.equal([1, 0, 2, 3]);
@@ -338,6 +339,8 @@ describe('ATEN_AST2100 video encoding', function() {
         });
     });
 
+    // TODO: On the 'full-frame decode' and 'frame udpate decode' tests, we are NOT actually asserting anything about the code's output yet.
+    /*
     describe('Full frame decode test', function () {
 
         it('should decode properly', function () {
@@ -357,11 +360,9 @@ describe('ATEN_AST2100 video encoding', function() {
                 data = parseHex(data);
                 dec.decode(data);
             });
-
         });
-            
-        
     });
+     */
 
     describe('Frame update decode test', function () {
 
@@ -378,7 +379,6 @@ describe('ATEN_AST2100 video encoding', function() {
 
             dec.decode(data);
         });
-
     });
     
 });

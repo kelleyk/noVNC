@@ -15,6 +15,9 @@ var Display;
 (function () {
     "use strict";
 
+    // Should be false only for PhantomJS 1.x.
+    var SUPPORTS_UINT8CLAMPEDARRAY = (window.Uint8ClampedArray !== undefined);
+    
     var SUPPORTS_IMAGEDATA_CONSTRUCTOR = false;
     try {
         new ImageData(new Uint8ClampedArray(1), 1, 1);
@@ -469,6 +472,7 @@ var Display;
             // else: No-op -- already done by setSubTile
         },
 
+        // NB(kelleyk): You *cannot* call this during a test in RGBX-order true-color mode, or PhantomJS dies with a Uint8ClampeddArray error.
         // @KK: If you know that your data will always be RGB (that is, isRgb==true and this._true_color==true), then
         //      you should be calling blitRgbxImage() instead of blitImage() to avoid the extra branches.
         blitImage: function (x, y, width, height, arr, offset, isRgb, from_queue) {
@@ -722,12 +726,26 @@ var Display;
         _rgbxImageData: function (x, y, vx, vy, width, height, arr, offset) {
             // NB(directxman12): arr must be an Type Array view
             var img;
-            if (SUPPORTS_IMAGEDATA_CONSTRUCTOR) {
-                img = new ImageData(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4), width, height);
-            } else {
-                img = this._drawCtx.createImageData(width, height);
-                img.data.set(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4));
-            }
+             if (SUPPORTS_UINT8CLAMPEDARRAY) {
+                 if (SUPPORTS_IMAGEDATA_CONSTRUCTOR) {
+                     img = new ImageData(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4), width, height);
+                 } else {
+                     img = this._drawCtx.createImageData(width, height);
+                     img.data.set(new Uint8ClampedArray(arr.buffer, arr.byteOffset, width * height * 4));
+                 }
+             } else {
+                 // NB(kelleyk): Normally, this function uses Uint8ClampedArray (which isn't implemented by PhantomJS
+                 // 1.x); this path is here only for test-case support.  A longer-term solution would be to upgrade to
+                 // PhantomJS 2.x.
+                 img = this._drawCtx.createImageData(width, height);
+                 var data = img.data;
+                 for (var i = 0, j = offset; i < (width * height * 4); i += 4, j += 4) {
+                     data[i] = arr[j];
+                     data[i+1] = arr[j+1];
+                     data[i+2] = arr[j+2];
+                     data[i+3] = arr[j+3];
+                 }
+             }
             this._drawCtx.putImageData(img, x - vx, y - vy);
         },
 

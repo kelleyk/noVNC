@@ -23,6 +23,12 @@ var addFunc = function (cl, name, func) {
     }
 };
 
+var addClassFunc = function (cl, name, func) {
+    if (!cl[name]) {
+        Object.defineProperty(cl, name, { enumerable: false, value: func });
+    }
+};
+
 addFunc(Array, 'push8', function (num) {
     "use strict";
     this.push(num & 0xFF);
@@ -41,6 +47,24 @@ addFunc(Array, 'push32', function (num) {
               (num >>  8) & 0xFF,
               num & 0xFF);
 });
+
+// @KK: There's probably a better way to do this, but TypedArray isn't directly accessible.
+// @KK: PhantomJS 1.x does not support Uint8ClampedArray or Float64Array, so those are left out.
+[Array, Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array].forEach(
+    function (cls) {
+        var thatCls = cls;
+        addClassFunc(cls, 'from', function (arrayLike,  mapFn, thisArg) {
+            if (typeof(mapFn) !== 'undefined' || typeof(thisArg) !== 'undefined')
+                throw new Error("This version of Array.from() does not support mapFn or thisArg arguments.");
+    
+            // var result = new arrayLike.constructor(arrayLike.length);
+            var result = new thatCls(arrayLike.length);
+            for (var i = 0; i < arrayLike.length; ++i)
+                result[i] = arrayLike[i];
+    
+            return result;
+        });
+    });
 
 // IE does not support map (even in IE9)
 //This prototype is provided by the Mozilla foundation and

@@ -111,7 +111,7 @@ describe('ATEN_AST2100 video encoding', function() {
     describe('quant tables', function() {
         it('quant tables are properly loaded and scaled', function () {
             // This is luma quant table #4.
-            var expected = new Int32Array([
+            var expected = Int32Array.from([
                 0x00090000, 0x0008527e, 0x00068866, 0x000a9537, 0x000d0000, 0x00114908, 0x000f274b, 0x0009616d,
                 0x0008527e, 0x000b8b14, 0x000caf8f, 0x00104f53, 0x00136b26, 0x0022df8f, 0x0018c594, 0x000b7b02,
                 0x0009255c, 0x000caf8f, 0x000f5d2c, 0x0013f8fd, 0x001cbe90, 0x0020d994, 0x001adebc, 0x000b2cc4,
@@ -144,7 +144,7 @@ describe('ATEN_AST2100 video encoding', function() {
             var dataUnit = [  // new Int16Array(
                 0xFF9C,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
-            var expected_idct_output = new Uint8Array([  // new Uint8Array(
+            var expected_idct_output = Uint8Array.from([  // new Uint8Array(
                 0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,
                 0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,
                 0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF]);
@@ -168,7 +168,7 @@ describe('ATEN_AST2100 video encoding', function() {
         it('test case 1', function () {
             // this is the output of the VLC / entropy coding process
             // XXX: @KK: Why is this 16-bit?
-            var dataUnit = new Int16Array([
+            var dataUnit = Int16Array.from([
                 0xFFBD,0,0,0,0,0,0,0,
                 0xFFC3,0,0,0,0,0,0,0,
                 0x26,0,0,0,0,0,0,0,
@@ -178,7 +178,7 @@ describe('ATEN_AST2100 video encoding', function() {
                 0xFFFC,0,0,0,0,0,0,0,
                 2,0,0,0,0,0,0,0]);
 
-            var expected = new Uint8Array([
+            var expected = Uint8Array.from([
                 0xF,0xF,0xF,0xF,0xF,0xF,0xF,0xF,
                 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
                 0x12,0x12,0x12,0x12,0x12,0x12,0x12,0x12,
@@ -214,7 +214,7 @@ describe('ATEN_AST2100 video encoding', function() {
             // this is the output of the VLC / entropy coding process
             // XXX: @KK: Why is this 16-bit?
             
-            var dataUnit = new Int16Array([
+            var dataUnit = Int16Array.from([
                 0xFF9B, 0, 0, 0, 0, 0, 0, 0, 0xFFA4, 0, 0, 0, 0, 0, 0, 0, 0x35, 0, 0, 0, 0, 0, 0, 0,
                 0xFFE6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0xFFFA,
                 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0]);

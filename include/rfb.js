@@ -735,7 +735,7 @@ var RFB;
                 this._rfb_auth_scheme = 0;
                 var types = this._sock.rQshiftBytes(num_types);
                 Util.Debug("Server security types: " + types);
-                this._rfb_server_supported_security_types = types.slice();  // @KK: Deliberately copy-constructed, since the underlying array is reused.
+                this._rfb_server_supported_security_types = Array.from(types);  // @KK: Deliberately copy-constructed, since the underlying array is reused.
                 for (var i = 0; i < types.length; i++) {
                     if (types[i] > this._rfb_auth_scheme && (types[i] <= 16 || types[i] == 22)) {
                         this._rfb_auth_scheme = types[i];

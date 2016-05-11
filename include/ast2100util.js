@@ -47,12 +47,13 @@ var fmt_s32 = function (x) {
 };
 
 var fmt_array = function(f, xx) {
-    xx = new Array(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
+    xx = Array.from(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
     return '[' + xx.map(f).join(', ') + ']';
 };
+
 /*
 var hexlify_u8a = function (xx) {
-    xx = new Array(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
+    xx = Array.from(xx);  // if xx is a typed array, the strings fmt_u8 returns will be silently coerced back to numbers
     return xx.map(fmt_u8).join('');
 };
 */

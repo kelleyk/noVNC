@@ -489,9 +489,14 @@ var Display;
                     'y': y,
                     'width': width,
                     'height': height,
+                    'isRgb': isRgb,  // @KK: ???
                 });
             } else if (this._true_color) {
-                this._bgrxImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+                if (isRgb) {
+                    this._rgbxImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+                } else {
+                    this._bgrxImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
+                }
             } else {
                 this._cmapImageData(x, y, this._viewportLoc.x, this._viewportLoc.y, width, height, arr, offset);
             }

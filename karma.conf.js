@@ -122,6 +122,10 @@ module.exports = function(config) {
       'include/des.js',
       'include/display.js',
       'include/inflator.js',
+      'include/ast2100const.js',  
+      'include/ast2100util.js',  
+      'include/ast2100idct.js',  
+      'include/ast2100.js',  
       'tests/test.*.js'
     ],
 

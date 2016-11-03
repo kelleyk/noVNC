@@ -691,6 +691,7 @@ var RFB;
                 case "003.008":
                 case "004.000":  // Intel AMT KVM
                 case "004.001":  // RealVNC 4.6
+                case "055.008":  // SuperMicro KVM
                     this._rfb_version = 3.8;
                     break;
                 default:
@@ -716,6 +717,10 @@ var RFB;
 
             var cversion = "00" + parseInt(this._rfb_version, 10) +
                            ".00" + ((this._rfb_version * 10) % 10);
+            // FIXME! We need this for some stupid SuperMicro KVMs
+            if (sversion == "055.008") {
+		    cversion = sversion;
+            }
             this._sock.send_string("RFB " + cversion + "\n");
             this._updateState('Security', 'Sent ProtocolVersion: ' + cversion);
         },

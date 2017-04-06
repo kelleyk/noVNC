@@ -47,6 +47,7 @@
 
     this._rfb_tightvnc = false;
     this._rfb_atenikvm = false;
+	this._rfb_insydevnc = false;
     this._rfb_xvp_ver = 0;
 
     // In preference order
@@ -178,7 +179,7 @@
         'ast2100_subsamplingMode': -1,          // If set, use this subsampling mode upon connection to a
                                                 // server using the AST2100 video encoding.  The value may
                                                 // either be 444 or 422 (which is really 4:2:0 subsampling).
-        
+
         // Callback functions
         'onUpdateState': function () { },       // onUpdateState(rfb, state, oldstate): connection state change
         'onNotification': function () { },      // onNotification(rfb, msg, level, options): notification for UI
@@ -322,12 +323,13 @@
             Util.Info("Sending Ctrl-Alt-Del");
 
             var keyEvent;
-            if (this._rfb_atenikvm) {
+			if (this._rfb_atenikvm || this._rfb_insydevnc) {
                 keyEvent = RFB.messages.atenKeyEvent;
-            } else {
+			}
+			else {
                 keyEvent = RFB.messages.keyEvent;
             }
-            
+
             keyEvent(this._sock, KeyTable.XK_Control_L, 1);
             keyEvent(this._sock, KeyTable.XK_Alt_L, 1);
             keyEvent(this._sock, KeyTable.XK_Delete, 1);
@@ -362,12 +364,13 @@
             if (this._rfb_connection_state !== 'connected' || this._view_only) { return false; }
 
             var keyEvent;
-            if (this._rfb_atenikvm) {
+			if (this._rfb_atenikvm || this._rfb_insydevnc) {
                 keyEvent = RFB.messages.atenKeyEvent;
-            } else {
+			}
+			else {
                 keyEvent = RFB.messages.keyEvent;
             }
-            
+
             if (typeof down !== 'undefined') {
                 Util.Info("Sending keysym (" + (down ? "down" : "up") + "): " + keysym);
                 keyEvent(this._sock, keysym, down ? 1 : 0);
@@ -700,6 +703,7 @@
 
             var down = (keyevent.type == 'keydown');
             if (this._qemuExtKeyEventSupported) {
+				console.log('using qemu key event');
                 var scancode = XtScancode[keyevent.code];
                 if (scancode) {
                     var keysym = keyevent.keysym;
@@ -709,9 +713,10 @@
                 }
             } else {
                 keysym = keyevent.keysym.keysym;
-                if (this._rfb_atenikvm) {
+				if (this._rfb_atenikvm || this._rfb_insydevnc) {
                     RFB.messages.atenKeyEvent(this._sock, keysym, down);
-                } else {
+				}
+				 else {
                     RFB.messages.keyEvent(this._sock, keysym, down);
                 }
             }
@@ -737,7 +742,7 @@
                     // If the viewport didn't actually move, then treat as a mouse click event
                     // Send the button down event here, as the button up event is sent at the end of this function
                     if (!this._viewportHasMoved && !this._view_only) {
-                        if (this._rfb_atenikvm) {
+						if (this._rfb_atenikvm || this._rfb_insydevnc) {
                             RFB.messages.atenPointerEvent(this._sock, this._display.absX(x), this._display.absY(y), bmask);
                         } else {
                             RFB.messages.pointerEvent(this._sock, this._display.absX(x), this._display.absY(y), bmask);
@@ -750,9 +755,10 @@
             if (this._view_only) { return; } // View only, skip mouse events
 
             if (this._rfb_connection_state !== 'connected') { return; }
-            if (this._rfb_atenikvm) {
+			if (this._rfb_atenikvm || this._rfb_insydevnc) {
                 RFB.messages.atenPointerEvent(this._sock, this._display.absX(x), this._display.absY(y), this._mouse_buttonMask);
-            } else {
+			}
+			else {
                 RFB.messages.pointerEvent(this._sock, this._display.absX(x), this._display.absY(y), this._mouse_buttonMask);
             }
         },
@@ -781,7 +787,7 @@
             if (this._view_only) { return; } // View only, skip mouse events
 
             if (this._rfb_connection_state !== 'connected') { return; }
-            if (this._rfb_atenikvm) {
+			if (this._rfb_atenikvm|| this._rfb_insydevnc) {
                 RFB.messages.atenPointerEvent(this._sock, this._display.absX(x), this._display.absY(y), this._mouse_buttonMask);
             } else {
                 RFB.messages.pointerEvent(this._sock, this._display.absX(x), this._display.absY(y), this._mouse_buttonMask);
@@ -817,6 +823,9 @@
                 case "005.000":  // RealVNC 5.3
                     this._rfb_version = 3.8;
                     break;
+                case "055.008": // Supermicro AST2400
+                    this._rfb_version = 55.8;
+                    break;
                 default:
                     return this._fail("Unsupported server",
                                       "Invalid server version: " + sversion);
@@ -831,12 +840,20 @@
                 return true;
             }
 
-            if (this._rfb_version > this._rfb_max_version) {
-                this._rfb_version = this._rfb_max_version;
+            // AST2400 requires that we send a version of 55.8 back
+            if (this._rfb_version == 55.8)
+            {
+                var cversion = "055.008";
             }
+            else
+            {
+                if (this._rfb_version > this._rfb_max_version) {
+                    this._rfb_version = this._rfb_max_version;
+                }
 
-            var cversion = "00" + parseInt(this._rfb_version, 10) +
-                           ".00" + ((this._rfb_version * 10) % 10);
+                var cversion = "00" + parseInt(this._rfb_version, 10) +
+                               ".00" + ((this._rfb_version * 10) % 10);
+            }
             this._sock.send_string("RFB " + cversion + "\n");
             Util.Debug('Sent ProtocolVersion: ' + cversion);
 
@@ -927,6 +944,48 @@
             return true;
         },
 
+        _negotiate_insyde_auth: function(numTunnels) {
+            var aten_sep = this._aten_password_sep;
+            var aten_auth = this._rfb_password.split(aten_sep);
+            if (aten_auth.length < 2) {
+                this._onPasswordRequired(
+                    this,
+                    'ATEN iKVM credentials required (user' + aten_sep + 'password)');
+                return false;
+            }
+            var username = aten_auth[0];
+            var password = aten_auth.slice(1).join(aten_sep);
+
+            var definedAuthLen = 24;
+            if (this._sock.rQwait("auth challenge", definedAuthLen-4))
+                return false;
+            this._rfb_insydevnc = true;
+			Util.Info('Using Insyde protocol extensions');
+            var challenge = this._sock.rQshiftBytes(definedAuthLen);
+            var sendUsername = [];
+            var sendPassword = [];
+            var strUsername = username;
+            var strPassword = password;
+            for (var i = 0; i < definedAuthLen; i++)
+                if (i < strUsername.length)
+                    sendUsername[i] = strUsername.charCodeAt(i);
+                else
+                    sendUsername[i] = 0;
+            sendUsername.length = definedAuthLen;
+            for (var i = 0; i < definedAuthLen; i++)
+                if (i < strPassword.length)
+                    sendPassword[i] = strPassword.charCodeAt(i);
+                else
+                    sendPassword[i] = 0;
+            sendPassword.length = definedAuthLen;
+            this._sock.send(sendUsername);
+            this._sock.send(sendPassword);
+            this._sock.flush();
+            this._rfb_init_state = "SecurityResult";
+
+            return true
+        },
+
         _negotiate_xvp_auth: function () {
             var xvp_sep = this._xvp_password_sep;
             var xvp_auth = this._rfb_password.split(xvp_sep);
@@ -996,13 +1055,22 @@
         },
 
         _negotiate_tight_auth: function () {
+            // And now for something completely different... in newer Supermicro boards
+            // they replaced all the tiny auth code with something called "insyde" auth.
+            // We can't read anything from the socket before we handle this, as we need to pull
+            // 24 bytes of a challenge off the wire.
+            if (this._rfb_version === 55.8) {
+                Util.Info('Detected ATEN AST2400 (using server version number).');
+                return this._negotiate_insyde_auth();
+            }
+
             var numTunnels = 0;  // NB(directxman12): this is only in scope within the following block,
                              //                   or if equal to zero (necessary for ATEN iKVM support)
             if (!this._rfb_tightvnc) {  // first pass, do the tunnel negotiation
                 if (this._sock.rQwait("num tunnels", 4)) { return false; }
                 numTunnels = this._sock.rQshift32();
                 this._rfb_tightvnc = true;
-                
+
                 // N.B.(kelleyk): I can only find about a half-dozen known tunnel
                 // types, so TightVNC should be sending a relatively small number
                 // here, whereas the ATEN servers send four bytes that, when
@@ -1047,7 +1115,7 @@
                 Util.Info('Detected ATEN iKVM server (using heuristic #1 -- newer AST2400 BMC?).');
                 return this._negotiate_aten_auth();
             }
-            
+
             var clientSupportedTypes = {
                 'STDVNOAUTH__': 1,
                 'STDVVNCAUTH_': 2
@@ -1203,6 +1271,21 @@
                 // TIGHT encoding capabilities
                 this._sock.rQskipBytes(16 * numEncodings);
             }
+			else if (this._rfb_insydevnc) {
+				if (this._sock.rQwait("InsydeVNC extended server init header", 12, 24 + name_length))
+					return false;
+				this._sock.rQskipBytes(4);
+				var SessionID = this._sock.rQshift32();
+				var VideoEnable = this._sock.rQshift8();
+				var KbMsEnable = this._sock.rQshift8();
+				var KickUserEnable = this._sock.rQshift8();
+				var VMEnable = this._sock.rQshift8();
+				Util.Debug("SessionID: " + SessionID +
+							", VideoEnable: " + VideoEnable +
+							", KbMsEnable: " + KbMsEnable +
+							", KickUserEnable: " + KickUserEnable +
+							", VMEnable: " + VMEnable);
+			}
 
             // NB(directxman12): these are down here so that we don't run them multiple times
             //                   if we backtrack
@@ -1489,12 +1572,13 @@
             } else {
                 msg_type = this._sock.rQshift8();
             }
+			Util.Debug('Got msg type '+msg_type);
 
             if (this._rfb_atenikvm) {
                 // ATEN iKVM servers use a variety of proprietary messages that
                 // can and do conflict with standard message types.  For
                 // example, 4 woudl normally be a "ResizeFrameBuffer" message.
-                
+
                 switch (msg_type) {
                     case 4:  // Front Ground Event
                         Util.Debug("ATEN iKVM Front Ground Event");
@@ -1529,6 +1613,54 @@
                         return true;
                 }
             }
+			else if (this._rfb_insydevnc)
+			{
+				// Insyde appears to be very similar to ATEN...
+				// https://www.insyde.com/products/supervyse
+
+				switch (msg_type)
+				{
+					case 57:
+						count = this._sock.rQshiftBytes(4);
+						var tmp = this._sock.rQshiftBytes(4);
+						var ctrl_code = 0;
+						for (var i = 0; i < 4; i++)
+							ctrl_code += tmp[i] * Math.pow(10, 3 - i);
+						var cmsg = this._sock.rQshiftBytes(256);
+						Util.Debug(cmsg);
+						switch (ctrl_code)
+						{
+							case 0:
+							case 1:
+								Util.Debug('A user has connected (possibly you!)');
+							break;
+							case 2:
+								Util.Debug('A user has disonnected (was it you?)');
+							break;
+							case 3:
+								Util.Debug('Disconnected due to logout?');
+							break;
+							case 4:
+								Util.Debug('Too many active iKVM sessions');
+							break;
+							case 5:
+							case 6:
+							case 7:
+								// we may never know what these mean!
+							break;
+							case 8:
+								Util.Debug('Disconnected due to bios udpdate');
+							break;
+							case 9:
+								Util.Debug('Disconnected due to IPMI controller update');
+							break;
+						}
+						return true;
+
+					case 4:
+						Util.Debug('Insyde cursor pos request');
+				}
+			}
 
             switch (msg_type) {
                 case 0:  // FramebufferUpdate
@@ -1910,7 +2042,7 @@
 
             buff[offset + 3] = 0;
             buff[offset + 4] = 0;
-            
+
             buff[offset + 5] = (ks >> 24);
             buff[offset + 6] = (ks >> 16);
             buff[offset + 7] = (ks >> 8);
@@ -1929,6 +2061,7 @@
             buff[offset + 17] = 0;
 
             sock._sQlen += 18;
+			sock.flush();
         },
 
         atenPointerEvent: function (sock, x, y, mask) {
@@ -1941,7 +2074,7 @@
 
             buff[offset + 3] = x >> 8;
             buff[offset + 4] = x;
-            
+
             buff[offset + 5] = y >> 8;
             buff[offset + 6] = y;
 
@@ -1961,6 +2094,7 @@
             buff[offset + 17] = 0;
 
             sock._sQlen += 18;
+			sock.flush();
         },
 
         atenChangeVideoSettings: function (sock, lumaQt, chromaQt, subsamplingMode) {
@@ -2953,7 +3087,7 @@
         },
 
         ATEN_AST2100: function () {
-           
+
             if (this._FBU.aten_len === -1) {
                 this._FBU.bytes = 8;
                 if (this._sock.rQwait("ATEN_AST2100", this._FBU.bytes)) { return false; }
@@ -2974,7 +3108,7 @@
                 if (this._sock.rQwait("ATEN_AST2100", this._FBU.bytes)) { return false; }
                 var data = this._sock.rQshiftBytes(this._FBU.aten_len);
             }
-            
+
             // Without this, the code in _framebufferUpdate() will keep looping
             // instead of realizing that it's finished and sending out a
             // FramebufferUpdateRequest.  It's important to make sure this code
@@ -2984,7 +3118,7 @@
             this._FBU.rects -= 1;
             if (this._FBU.rects != 0)
                 throw 'Unexpected number of rects in FramebufferUpdate message; should always be 1!';
-            
+
             // N.B.(kelleyk): It's also very important for the way that this
             // function works that aten_len wind up -1 before we ever return
             // true; otherwise we'll fail to parse the two extra, ATEN-specific
@@ -3030,7 +3164,7 @@
                     }
                 });
             }
-            
+
             // N.B.(kelleyk): Copied this block from ATEN_HERMON above.
             if (this._fb_width !== this._FBU.width && this._fb_height !== this._FBU.height) {
                 Util.Debug(">> ATEN_AST2100 resize desktop");
@@ -3039,7 +3173,7 @@
                 this._onFBResize(this, this._fb_width, this._fb_height);
                 this._display.resize(this._fb_width, this._fb_height);
                 Util.Debug("<< ATEN_AST2100 resize desktop");
-                
+
                 this._aten_ast2100_dec.setSize(this._FBU.width, this._FBU.height);
             }
 

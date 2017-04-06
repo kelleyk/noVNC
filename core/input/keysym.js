@@ -455,6 +455,11 @@ XK2HID[KeyTable.XK_underscore]   = XK2HID[KeyTable.XK_minus];
 XK2HID[KeyTable.XK_bar]          = XK2HID[KeyTable.XK_backslash];
 XK2HID[KeyTable.XK_quotedbl]     = XK2HID[KeyTable.XK_apostrophe];
 XK2HID[KeyTable.XK_asciitilde]   = XK2HID[KeyTable.XK_grave];
+XK2HID[KeyTable.XK_braceleft]    = XK2HID[KeyTable.XK_bracketleft];
+XK2HID[KeyTable.XK_braceright]   = XK2HID[KeyTable.XK_bracketright];
+XK2HID[KeyTable.XK_question]     = XK2HID[KeyTable.XK_slash];
+XK2HID[KeyTable.XK_colon]        = XK2HID[KeyTable.XK_semicolon];
+XK2HID[KeyTable.XK_plus]         = XK2HID[KeyTable.XK_equal];
 
 
 /* [module] export default KeyTable; */
